@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Defense Console</title>
+  <meta name="description" content="A customizable, visual personal security checklist. Track your progress securing your digital life.">
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="topbar">
+    <a class="brand" href="#/">
+      <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path fill="currentColor" d="M12 1 3 5v6c0 5.6 3.8 10.7 9 12 5.2-1.3 9-6.4 9-12V5l-9-4Zm-1.2 15.4-4-4 1.4-1.4 2.6 2.6 5.6-5.6 1.4 1.4-7 7Z"/></svg>
+      <span>Defense<b>Console</b></span>
+    </a>
+    <nav class="mainnav" aria-label="Main">
+      <a href="#/" data-nav="home">Dashboard</a>
+      <a href="#/all" data-nav="all">Checklist</a>
+      <a href="#/customize" data-nav="customize">Customize</a>
+      <a href="#/about" data-nav="about">About</a>
+    </nav>
+    <div class="topactions">
+      <button class="iconbtn" id="searchBtn" title="Search (/)" aria-label="Search">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M10 2a8 8 0 0 1 6.3 12.9l5.4 5.4-1.4 1.4-5.4-5.4A8 8 0 1 1 10 2Zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z"/></svg>
+      </button>
+      <button class="iconbtn" id="themeBtn" title="Toggle theme" aria-label="Toggle theme">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path fill="currentColor" d="M12 3a9 9 0 1 0 9 9c0-.5 0-.9-.1-1.4A5.5 5.5 0 0 1 13.4 3.1 9 9 0 0 0 12 3Z"/></svg>
+      </button>
+    </div>
+  </header>
+  <main id="main" tabindex="-1"><div class="loading">Loading checklist…</div></main>
+  <div id="palette" class="palette" hidden>
+    <div class="palette-box" role="dialog" aria-modal="true" aria-label="Search checklist">
+      <input id="paletteInput" type="search" placeholder="Search 250+ security actions…" autocomplete="off">
+      <ul id="paletteResults" role="listbox"></ul>
+      <div class="palette-foot"><kbd>↑</kbd><kbd>↓</kbd> navigate · <kbd>Enter</kbd> open · <kbd>Esc</kbd> close</div>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <footer class="foot">
+    Content from the <a href="https://github.com/ShivdaSaj/personal-security-checklist" target="_blank" rel="noopener noreferrer">Personal Security Checklist</a>
+    (inspired by <a href="https://digital-defense.io/" target="_blank" rel="noopener noreferrer">digital-defense.io</a>).
+    Your progress never leaves this browser.
+  </footer>
+  <script src="app.js" defer></script>
+</body>
+</html>

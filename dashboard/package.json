@@ -1,0 +1,16 @@
+{
+  "name": "defense-console",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Customizable personal security checklist dashboard, built from personal-security-checklist.yml",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "serve": "node build.mjs && npx --yes http-server dist -p 8080"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "js-yaml": "4.1.0",
+    "marked": "12.0.2"
+  }
+}
