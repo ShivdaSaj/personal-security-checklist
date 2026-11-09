@@ -2,6 +2,11 @@
 # No image build needed: a one-shot builder fetches the app + checklist from GitHub, builds
 # the static site into a volume, and an unprivileged, read-only nginx serves it.
 # Restarting the project (or the builder) pulls the latest content from SOURCE.
+# The footer's newsletter form posts to /api/subscribe, which Traefik routes to subscribe-api;
+# it emails each sign-up to MAIL_TO. Set these in the project's environment (.env), never here:
+#   SMTP_USER=newsletter@sajinshivdas.com   (a Hostinger mailbox on the domain)
+#   SMTP_PASS=<that mailbox's password>
+# Optional: MAIL_TO (default sajin@sajinshivdas.com), SMTP_HOST, SMTP_PORT, SMTP_FROM.
 services:
   builder:
     image: node:22-alpine
@@ -13,10 +18,11 @@ services:
       - |
         {
           set -e
-          mkdir -p /work/dashboard/src /work/web/src/components/core
+          mkdir -p /work/dashboard/src /work/dashboard/server /work/web/src/components/core
           cd /work
           for f in dashboard/package.json dashboard/package-lock.json dashboard/build.mjs dashboard/nginx.conf \
                    dashboard/src/index.html dashboard/src/app.js dashboard/src/styles.css dashboard/src/favicon.svg \
+                   dashboard/server/package.json dashboard/server/package-lock.json dashboard/server/subscribe.mjs \
                    personal-security-checklist.yml web/src/components/core/icon.tsx; do
             wget -qO "$$f" "$$SOURCE/$$f"
           done
@@ -25,12 +31,16 @@ services:
           node build.mjs
           rm -rf /site/* && cp -r dist/. /site/
           cp nginx.conf /conf/default.conf
-          chmod -R a+rX /site /conf
+          cd server
+          npm ci --omit=dev --no-audit --no-fund --loglevel=error
+          rm -rf /api/* && cp -r package.json subscribe.mjs node_modules /api/
+          chmod -R a+rX /site /conf /api
           echo "Build complete"
         } || { echo "Build failed"; test -f /site/index.html && test -f /conf/default.conf; }
     volumes:
       - site:/site
       - conf:/conf
+      - api:/api
 
   defense-console:
     image: nginxinc/nginx-unprivileged:1.27-alpine
@@ -62,6 +72,49 @@ services:
       - traefik.http.routers.defense-console.tls.certresolver=letsencrypt
       - traefik.http.services.defense-console.loadbalancer.server.port=8080
 
+  subscribe-api:
+    image: node:22-alpine
+    restart: unless-stopped
+    depends_on:
+      builder:
+        condition: service_completed_successfully
+    user: node
+    working_dir: /api
+    command: ["node", "subscribe.mjs"]
+    environment:
+      PORT: "3000"
+      NODE_ENV: production
+      MAIL_TO: ${MAIL_TO:-sajin@sajinshivdas.com}
+      SMTP_HOST: ${SMTP_HOST:-smtp.hostinger.com}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    expose:
+      - "3000"
+    volumes:
+      - api:/api:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/healthz"]
+      interval: 30s
+      timeout: 3s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.defense-console-api.rule=Host(`personal-checklist.sajinshivdas.online`) && PathPrefix(`/api/`)
+      - traefik.http.routers.defense-console-api.priority=100
+      - traefik.http.routers.defense-console-api.entrypoints=websecure
+      - traefik.http.routers.defense-console-api.tls=true
+      - traefik.http.routers.defense-console-api.tls.certresolver=letsencrypt
+      - traefik.http.services.defense-console-api.loadbalancer.server.port=3000
+
 volumes:
   site:
   conf:
+  api:

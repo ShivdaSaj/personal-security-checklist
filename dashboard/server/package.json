@@ -1,0 +1,15 @@
+{
+  "name": "defense-console-subscribe",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Newsletter sign-up API for the Defense Console footer: validates the email and notifies the site owner by SMTP.",
+  "type": "module",
+  "scripts": {
+    "start": "node subscribe.mjs",
+    "test": "node --test"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "nodemailer": "6.10.1"
+  }
+}

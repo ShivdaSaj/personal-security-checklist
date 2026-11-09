@@ -1,5 +1,6 @@
 /* Defense Console — a customizable, visual personal security checklist.
- * All state lives in localStorage; nothing is sent anywhere. */
+ * All checklist state lives in localStorage and never leaves the browser. The only network
+ * request is the optional footer newsletter sign-up, which posts just the email entered. */
 (() => {
   'use strict';
 
@@ -528,6 +529,53 @@
     if (gPressed && e.key === 'c') location.hash = '#/all';
   });
 
+  // ---------- footer newsletter sign-up ----------
+  // Mirrors the server-side check in server/subscribe.mjs: one plain ASCII address, nothing else.
+  function validEmail(value) {
+    const email = String(value || '').trim();
+    if (email.length < 6 || email.length > 254 || /[^\x21-\x7e]/.test(email)) return null;
+    const at = email.lastIndexOf('@');
+    if (at < 1 || email.indexOf('@') !== at) return null;
+    const local = email.slice(0, at), domain = email.slice(at + 1).toLowerCase(), labels = domain.split('.');
+    if (local.length > 64 || !/^[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*$/.test(local)) return null;
+    if (labels.length < 2 || !labels.every((l) => /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$/.test(l))) return null;
+    if (!/^(?:[A-Za-z]{2,63}|xn--[A-Za-z0-9-]{1,59})$/.test(labels[labels.length - 1])) return null;
+    return `${local}@${domain}`;
+  }
+  function initSubscribe() {
+    const form = $('#subscribe-form'), msg = $('#sub-msg');
+    if (!form) return;
+    const input = form.elements.email, btn = form.querySelector('button');
+    let hideTimer;
+    const show = (text, ok) => {
+      clearTimeout(hideTimer);
+      msg.textContent = text; msg.className = `sub-msg ${ok ? 'ok' : 'err'}`; msg.hidden = false;
+      if (ok) hideTimer = setTimeout(() => (msg.hidden = true), 6000);
+    };
+    input.addEventListener('input', () => { input.removeAttribute('aria-invalid'); if (!msg.hidden && msg.classList.contains('err')) msg.hidden = true; });
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (btn.disabled) return;
+      const email = validEmail(input.value);
+      if (!email) { input.setAttribute('aria-invalid', 'true'); show('Please enter a valid email address, like name@example.com.', false); input.focus(); return; }
+      btn.disabled = true; btn.classList.add('loading');
+      try {
+        const r = await fetch('/api/subscribe', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'omit',
+          body: JSON.stringify({ email, website: form.elements.website.value }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok || data.ok !== true) throw new Error(data.error || 'Subscription failed. Please try again later.');
+        show(data.message || 'Thanks for subscribing!', true);
+        form.reset();
+      } catch (err) {
+        show(err instanceof TypeError ? 'Could not reach the server. Please check your connection and try again.' : err.message, false);
+      } finally {
+        btn.disabled = false; btn.classList.remove('loading');
+      }
+    });
+  }
+
   // ---------- theme ----------
   function applyTheme() {
     const root = document.documentElement;
@@ -542,6 +590,7 @@
   // ---------- boot ----------
   applyTheme();
   const fy = $('#footer-year'); if (fy) fy.textContent = new Date().getFullYear();
+  initSubscribe();
   window.addEventListener('hashchange', () => { route(); if (!location.hash.split('/')[3]) scrollTo(0, 0); });
   fetch('data.json', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).then((d) => {
     DATA = d; recordHistory(); route();

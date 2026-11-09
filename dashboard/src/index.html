@@ -68,8 +68,13 @@
       </nav>
       <section class="footer-sub">
         <p>Subscribe to get updates on cybersecurity insights</p>
-        <a class="btn-sub" href="https://mindmap.sajinshivdas.online/" target="_blank" rel="noopener noreferrer">Subscribe</a>
-        <p class="footer-sub-note">Opens the newsletter sign-up in a new tab. Nothing from this checklist is shared.</p>
+        <form id="subscribe-form" novalidate>
+          <label class="sr-only" for="sub-email">Email address</label>
+          <input id="sub-email" name="email" type="email" inputmode="email" placeholder="Your email" autocomplete="email" required maxlength="254" spellcheck="false" autocapitalize="off">
+          <input name="website" type="text" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <button class="btn-sub" type="submit">Subscribe</button>
+          <p class="sub-msg" id="sub-msg" role="status" aria-live="polite" hidden></p>
+        </form>
       </section>
     </div>
     <div class="footer-bottom">
