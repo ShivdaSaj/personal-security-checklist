@@ -49,3 +49,27 @@ When `personal-security-checklist.yml` changes, rebuild the image to pick up the
 the app and checklist from GitHub (`SOURCE`), builds the site into a volume, and a read-only,
 unprivileged nginx serves it behind Traefik at `personal-checklist.sajinshivdas.online`. Restart
 the project to pick up new commits.
+
+### Newsletter sign-up (footer)
+
+The footer's subscribe form posts `{"email": "..."}` to `/api/subscribe`. In the Traefik deployment
+that path is routed to the `subscribe-api` service (`server/subscribe.mjs`), which validates the
+address and emails a notification to `MAIL_TO` (default `sajin@sajinshivdas.com`) over SMTP.
+Nothing is stored. The API only accepts a single plain ASCII address (no display names, lists,
+quotes, IP literals or line breaks), caps the body at 1 KB, ignores repeat sign-ups for 24 hours,
+rate-limits each IP to 5 attempts per 15 minutes and sends at most 60 notifications an hour. A
+hidden honeypot field silently drops bot submissions. The browser runs the same check before sending.
+
+Set the mailbox credentials in the Docker project's environment (`.env`), not in the compose file:
+
+```
+SMTP_USER=newsletter@sajinshivdas.com
+SMTP_PASS=<mailbox password>
+```
+
+Optional: `MAIL_TO`, `SMTP_HOST` (default `smtp.hostinger.com`), `SMTP_PORT` (default `465`),
+`SMTP_FROM` (default `SMTP_USER`). Without credentials the API answers 503 and the form shows
+"temporarily unavailable". The plain `Dockerfile` / `docker-compose.yml` build serves the static
+site only, so there nginx answers `/api/` with the same 503.
+
+Run the API tests with `cd server && npm ci && npm test`.
