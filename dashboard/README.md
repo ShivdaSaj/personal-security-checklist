@@ -42,3 +42,10 @@ docker compose up -d --build   # serves on http://localhost:8088
 ```
 
 When `personal-security-checklist.yml` changes, rebuild the image to pick up the new content.
+
+### Hostinger VPS / Traefik
+
+`deploy/docker-compose.hostinger.yml` needs no image build. A one-shot `node` container downloads
+the app and checklist from GitHub (`SOURCE`), builds the site into a volume, and a read-only,
+unprivileged nginx serves it behind Traefik at `personal-checklist.sajinshivdas.online`. Restart
+the project to pick up new commits.
