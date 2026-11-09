@@ -1,6 +1,7 @@
 // Builds the static dashboard into ./dist from the repository's checklist YAML.
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
 import { marked } from 'marked';
@@ -67,6 +68,15 @@ fs.mkdirSync(out, { recursive: true });
 for (const f of fs.readdirSync(path.join(here, 'src'))) {
   fs.copyFileSync(path.join(here, 'src', f), path.join(out, f));
 }
+// Version the stylesheet and script URLs by content, so a deploy never pairs new HTML with a
+// stylesheet or script still cached from the previous version.
+const indexPath = path.join(out, 'index.html');
+let html = fs.readFileSync(indexPath, 'utf8');
+for (const asset of ['styles.css', 'app.js']) {
+  const hash = crypto.createHash('sha256').update(fs.readFileSync(path.join(out, asset))).digest('hex').slice(0, 10);
+  html = html.replace(new RegExp(`(href|src)="${asset.replace('.', '\\.')}"`), `$1="${asset}?v=${hash}"`);
+}
+fs.writeFileSync(indexPath, html);
 const data = { generated: new Date().toISOString(), sections, icons };
 fs.writeFileSync(path.join(out, 'data.json'), JSON.stringify(data));
 

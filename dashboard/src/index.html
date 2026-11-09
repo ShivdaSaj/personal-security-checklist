@@ -71,7 +71,7 @@
         <form id="subscribe-form" novalidate>
           <label class="sr-only" for="sub-email">Email address</label>
           <input id="sub-email" name="email" type="email" inputmode="email" placeholder="Your email" autocomplete="email" required maxlength="254" spellcheck="false" autocapitalize="off">
-          <input name="website" type="text" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <div class="hp" aria-hidden="true" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden"><input name="website" type="text" tabindex="-1" autocomplete="off"></div>
           <button class="btn-sub" type="submit">Subscribe</button>
           <p class="sub-msg" id="sub-msg" role="status" aria-live="polite" hidden></p>
         </form>
