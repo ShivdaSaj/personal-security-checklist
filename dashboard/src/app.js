@@ -541,6 +541,7 @@
 
   // ---------- boot ----------
   applyTheme();
+  const fy = $('#footer-year'); if (fy) fy.textContent = new Date().getFullYear();
   window.addEventListener('hashchange', () => { route(); if (!location.hash.split('/')[3]) scrollTo(0, 0); });
   fetch('data.json', { cache: 'no-cache' }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }).then((d) => {
     DATA = d; recordHistory(); route();
