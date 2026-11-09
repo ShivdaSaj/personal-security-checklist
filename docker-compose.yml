@@ -1,0 +1,19 @@
+# Deploys the Defense Console dashboard. On a Hostinger VPS (Docker Manager) this builds
+# straight from the GitHub repository; locally, run `docker compose up -d --build`.
+services:
+  defense-console:
+    build:
+      context: https://github.com/ShivdaSaj/personal-security-checklist.git#claude/fervent-sagan-bd7jif
+      dockerfile: Dockerfile
+    image: defense-console:latest
+    container_name: defense-console
+    restart: unless-stopped
+    ports:
+      - "8088:8080"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

@@ -1,0 +1,67 @@
+# Defense Console on a Docker host behind Traefik (e.g. Hostinger VPS Docker Manager).
+# No image build needed: a one-shot builder fetches the app + checklist from GitHub, builds
+# the static site into a volume, and an unprivileged, read-only nginx serves it.
+# Restarting the project (or the builder) pulls the latest content from SOURCE.
+services:
+  builder:
+    image: node:22-alpine
+    restart: "no"
+    environment:
+      SOURCE: https://raw.githubusercontent.com/ShivdaSaj/personal-security-checklist/master
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        {
+          set -e
+          mkdir -p /work/dashboard/src /work/web/src/components/core
+          cd /work
+          for f in dashboard/package.json dashboard/package-lock.json dashboard/build.mjs dashboard/nginx.conf \
+                   dashboard/src/index.html dashboard/src/app.js dashboard/src/styles.css dashboard/src/favicon.svg \
+                   personal-security-checklist.yml web/src/components/core/icon.tsx; do
+            wget -qO "$$f" "$$SOURCE/$$f"
+          done
+          cd dashboard
+          npm ci --omit=dev --no-audit --no-fund --loglevel=error
+          node build.mjs
+          rm -rf /site/* && cp -r dist/. /site/
+          cp nginx.conf /conf/default.conf
+          chmod -R a+rX /site /conf
+          echo "Build complete"
+        } || { echo "Build failed"; test -f /site/index.html && test -f /conf/default.conf; }
+    volumes:
+      - site:/site
+      - conf:/conf
+
+  defense-console:
+    image: nginxinc/nginx-unprivileged:1.27-alpine
+    restart: unless-stopped
+    depends_on:
+      builder:
+        condition: service_completed_successfully
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    expose:
+      - "8080"
+    volumes:
+      - site:/usr/share/nginx/html:ro
+      - conf:/etc/nginx/conf.d:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 3s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.defense-console.rule=Host(`personal-checklist.sajinshivdas.online`)
+      - traefik.http.routers.defense-console.entrypoints=websecure
+      - traefik.http.routers.defense-console.tls=true
+      - traefik.http.routers.defense-console.tls.certresolver=letsencrypt
+      - traefik.http.services.defense-console.loadbalancer.server.port=8080
+
+volumes:
+  site:
+  conf:

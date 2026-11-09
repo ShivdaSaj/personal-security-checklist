@@ -1,0 +1,5 @@
+.git
+**/node_modules
+dashboard/dist
+web/
+!web/src/components/core/icon.tsx
