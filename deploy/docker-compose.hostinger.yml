@@ -7,7 +7,7 @@ services:
     image: node:22-alpine
     restart: "no"
     environment:
-      SOURCE: https://raw.githubusercontent.com/ShivdaSaj/personal-security-checklist/claude/fervent-sagan-bd7jif
+      SOURCE: https://raw.githubusercontent.com/ShivdaSaj/personal-security-checklist/master
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
